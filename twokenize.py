@@ -25,6 +25,7 @@ from __future__ import unicode_literals
 import operator
 import re
 import sys
+import emoji
 
 try:
     from html.parser import HTMLParser
@@ -140,6 +141,11 @@ emoticon = regex_or(
         oOEmote
 )
 
+# Grab the compiled emoji regex from the emoji module
+# The code expects the regex pattern, not the compiled object
+# So we use the pattern attribute to extract it
+Emoji = emoji.get_emoji_regexp().pattern
+
 Hearts = "(?:<+/?3+)+" #the other hearts are in decorations
 
 Arrows = regex_or(r"(?:<*[-―—=]*>+|<+[-―—=]*>*)", u"[\u2190-\u21ff]+")
@@ -168,6 +174,7 @@ Email = regex_or("(?<=(?:\W))", "(?<=(?:^))") + r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-
 # Additionally, these things are "protected", meaning they shouldn't be further split themselves.
 Protected  = re.compile(
     regex_or(
+        Emoji, #This is where we introduce our emoji regex
         Hearts,
         url,
         Email,
@@ -224,7 +231,7 @@ def simpleTokenize(text):
     # e.g. URLs, 1.0, U.N.K.L.E., 12:53
     bads = []
     badSpans = []
-    for match in Protected.finditer(splitPunctText):
+    for match in Protected.finditer(splitPunctText): #Emoji regex used here
         # The spans of the "bads" should not be split.
         if (match.start() != match.end()): #unnecessary?
             bads.append( [splitPunctText[match.start():match.end()]] )
